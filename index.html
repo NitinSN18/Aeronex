@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aeronex - zone-by-zone air quality intelligence for Hyderabad</title>
+  <meta name="description" content="Aeronex turns low-cost sensors into zone-level AQI, pollution-source hypotheses, anomaly alerts and short-term forecasts for Hyderabad.">
+  <meta name="theme-color" content="#06202b">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <!-- ===================== NAVBAR ===================== -->
+  <header class="nav" id="nav">
+    <div class="wrap nav-in">
+      <a class="brand" href="#home" aria-label="Aeronex home">
+        <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+          <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs>
+          <circle cx="24" cy="24" r="21" fill="none" stroke="url(#lg)" stroke-width="3"/>
+          <path d="M8 27c6 0 6-7 12-7s6 7 12 7 5-4 8-4" fill="none" stroke="url(#lg)" stroke-width="3" stroke-linecap="round"/>
+          <path d="M12 34c5 0 5-5 10-5s5 5 10 5 4-3 6-3" fill="none" stroke="url(#lg)" stroke-width="2.4" stroke-linecap="round" opacity=".6"/>
+          <circle cx="33" cy="14" r="2.6" fill="#5eead4"/>
+        </svg>
+        <span>Aeronex</span>
+      </a>
+      <nav class="links" id="links" aria-label="Main">
+        <a href="#home">Home</a>
+        <a href="#routes">Bus routes</a>
+        <a href="#hardware">Hardware</a>
+        <a href="#live">Live AQI</a>
+        <a href="#map">Map</a>
+        <a href="#heatmap">Heatmap</a>
+        <a href="#forecast">Forecast</a>
+        <a href="#" class="m-only" id="mobAuth" data-login>Sign in</a>
+      </nav>
+      <div class="nav-auth" id="navAuth"><a class="btn btn-primary nav-cta" href="#" data-login>Sign in</a></div>
+      <button class="burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="links"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="view" data-view="home">
+    <!-- ===================== HERO ===================== -->
+    <section class="hero" id="home">
+      <canvas id="sky" aria-hidden="true"></canvas>
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="wrap hero-in">
+        <div class="hero-copy">
+          <span class="pill"><i class="dot"></i> Hyderabad &middot; 6 zones &middot; 11 sensor nodes</span>
+          <h1>Know the air you breathe, <span class="grad">zone by zone.</span></h1>
+          <p class="lead">Aeronex turns low-cost sensors on city corridors and buses into live zone AQI, a transparent guess at <em>what</em> is polluting, early anomaly alerts and short-term forecasts.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary btn-lg" href="#" data-login>Sign in <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            <a class="btn btn-ghost btn-lg" href="#routes">See the bus routes</a>
+          </div>
+          <ul class="trust">
+            <li><b>PM2.5 &amp; PM10</b> CPCB-band AQI</li>
+            <li><b>Source hints</b> smoke / traffic / dust</li>
+            <li><b>60&nbsp;min</b> forecast horizon</li>
+          </ul>
+        </div>
+
+        <div class="gauge-card" aria-live="polite">
+          <div class="gauge-top"><span class="live-dot"></span> City average, right now</div>
+          <div class="gauge">
+            <svg viewBox="0 0 200 200" aria-hidden="true">
+              <circle class="g-bg" cx="100" cy="100" r="84"/>
+              <circle class="g-fg" id="gArc" cx="100" cy="100" r="84"/>
+            </svg>
+            <div class="g-center">
+              <div class="g-num" id="gNum">--</div>
+              <div class="g-cat" id="gCat">connecting&hellip;</div>
+            </div>
+          </div>
+          <div class="g-foot" id="gFoot">Indicative AQI from prototype sensors</div>
+          <div class="g-scale" aria-hidden="true"><i style="--c:#00b050"></i><i style="--c:#92d050"></i><i style="--c:#ffc000"></i><i style="--c:#ff7c00"></i><i style="--c:#ff0000"></i><i style="--c:#800000"></i></div>
+        </div>
+      </div>
+      <div class="wave" aria-hidden="true">
+        <svg viewBox="0 0 1440 120" preserveAspectRatio="none"><path class="w1" d="M0 70c120 30 240 30 360 0s240-30 360 0 240 30 360 0 240-30 360 0v50H0z"/><path class="w2" d="M0 85c120-25 240-25 360 0s240 25 360 0 240-25 360 0 240 25 360 0v35H0z"/></svg>
+      </div>
+    </section>
+
+    <!-- ===================== THE DEVICE ===================== -->
+    <section class="sec" id="node">
+      <div class="wrap">
+        <header class="sec-head reveal">
+          <span class="eyebrow">The device</span>
+          <h2>A sensor node that rides the bus.</h2>
+          <p>One compact, battery-powered unit bolts onto a city bus. As the bus drives its route, it measures the air along the whole road instead of at one fixed spot.</p>
+        </header>
+        <div class="fig-grid">
+          <figure class="reveal"><img src="img/node-on-bus.jpg" alt="Sensor node with three gas sensors and a GPS antenna mounted on the side of a city bus" loading="lazy"><figcaption><b>On the road.</b> Mounted on a city bus, with the gas sensors facing the traffic and the GPS and radio antennas on top.</figcaption></figure>
+          <figure class="reveal"><img src="img/node-inside.jpg" alt="Cut-away view of the node: gas sensors on top, ESP32 board with DHT11 and barometer in the middle, battery at the bottom" loading="lazy"><figcaption><b>Inside.</b> Top: MQ-135, MQ-2 and MQ-9 gas sensors. Middle: ESP32 board, DHT11 humidity sensor and barometer. Bottom: battery with its charging and boost board.</figcaption></figure>
+        </div>
+        <p class="center reveal"><a class="btn btn-primary" href="#routes">See it on three bus routes</a></p>
+      </div>
+    </section>
+
+    <!-- ===================== FEATURES ===================== -->
+    <section class="sec alt" id="features">
+      <div class="wrap">
+        <header class="sec-head reveal">
+          <span class="eyebrow">What you get</span>
+          <h2>From raw sensor counts to decisions.</h2>
+          <p>A full pipeline, not just a chart: validation, analytics, explainable attribution and alerts.</p>
+        </header>
+        <div class="cards">
+          <article class="card reveal"><div class="ico"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4"/></svg></div><h3>Hardware node</h3><p>Raw ESP32 readings over USB: three gas proxies, temperature, humidity, pressure and altitude, with warm-up and fault flags.</p></article>
+          <article class="card reveal"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 18V9m5 9V5m5 13v-7m5 7V8" /></svg></div><h3>Zone AQI</h3><p>CPCB-band AQI from PM2.5/PM10, smoothed per zone, with the raw readings always one click away.</p></article>
+          <article class="card reveal"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg></div><h3>Live map</h3><p>Leaflet map with zone AQI pins and your hardware node. Falls back to an offline schematic when there is no internet.</p></article>
+          <article class="card reveal"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 4-7 5 5"/><path d="M3 21h18" /></svg></div><h3>Short-term forecast</h3><p>15, 30 and 60 minute outlook, persistence versus trend, each labelled with the method that produced it.</p></article>
+          <article class="card reveal"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-5-5"/></svg></div><h3>Source insight</h3><p>Is it traffic, dust or smoke? A transparent rule-based hypothesis with a confidence score &mdash; and it abstains when unsure.</p></article>
+          <article class="card reveal"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5m0 3v.01"/></svg></div><h3>Anomaly events</h3><p>Deviations from each zone's own baseline become events that move through detected, confirmed and recommended action.</p></article>
+          <article class="card reveal"><div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div><h3>Node health</h3><p>Online status, GPS validity, warm-up and sensor faults for every fixed and bus-mounted node.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== HOW IT WORKS ===================== -->
+    <section class="sec" id="how">
+      <div class="wrap">
+        <header class="sec-head reveal">
+          <span class="eyebrow">How it works</span>
+          <h2>Four steps from street to screen.</h2>
+        </header>
+        <ol class="steps">
+          <li class="reveal"><span class="n">1</span><h3>Sense</h3><p>PM2.5/PM10 and gas-proxy sensors on corridor poles and city buses.</p></li>
+          <li class="reveal"><span class="n">2</span><h3>Collect</h3><p>A gateway forwards packets to the API, which validates, de-duplicates and stores them. Nothing is lost if the link drops.</p></li>
+          <li class="reveal"><span class="n">3</span><h3>Analyse</h3><p>The worker computes AQI, baselines, source hypotheses, anomalies and forecasts.</p></li>
+          <li class="reveal"><span class="n">4</span><h3>Act</h3><p>Dashboards for the public and officials, with recommended actions for open events.</p></li>
+        </ol>
+        <div class="honest reveal">
+          <b>Honest by design.</b> Gas sensors are raw proxy indices, never claimed as concentrations. Source labels say <em>probable</em>. AQI is indicative, not the official 24-hour figure. Without a backend, zone AQI is an Open-Meteo model estimate, shown as such.
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CTA ===================== -->
+    <section class="sec about" id="start">
+      <div class="wrap">
+        <div class="cta-box wide reveal">
+          <h3>Ready to see the numbers?</h3>
+          <p>Sign in with your name and password.</p>
+          <a class="btn btn-primary btn-lg" href="#" data-login>Sign in</a>
+        </div>
+      </div>
+    </section>
+    </div>
+    <div class="view app" data-view="routes" hidden>
+    <!-- ===================== BUS ROUTES ===================== -->
+    <section class="sec" id="routes">
+      <div class="wrap">
+        <header class="sec-head">
+          <span class="eyebrow">Mobile sensing</span>
+          <h2>One bus samples a whole corridor.</h2>
+          <p>A fixed node measures one spot. A node on a city bus measures every ~100 m of road it drives, so three routes into JNTU cover far more ground than a handful of fixed pins.</p>
+        </header>
+        <p class="sim-banner"><b>Simulation.</b> Bus positions and the readings along the road are simulated for this demo. You can attach your live ESP32 to a bus below to show its real gas readings on the route.</p>
+        <div class="hw-bar">
+          <button class="btn btn-primary" id="rtPlay" type="button">Pause</button>
+          <label>Demo speed <select id="rtSpeed"><option value="10">x10</option><option value="30" selected>x30</option><option value="60">x60</option><option value="120">x120</option></select></label>
+          <label>Attach live ESP32 to <select id="rtAttach"><option value="">none (all simulated)</option><option value="A">Bus A</option><option value="B">Bus B</option><option value="C">Bus C</option></select></label>
+          <button class="btn btn-ghost" id="rtReset" type="button">Reset trails</button>
+        </div>
+        <p class="place-msg" id="rtNote" role="status"></p>
+        <div class="map-wrap">
+          <div class="map-box"><div id="routeMap" aria-label="Map of three bus routes to JNTU with moving buses"></div></div>
+          <div class="map-side">
+            <div class="wx-card" id="busCards"><h3>Buses</h3><p class="muted">Loading routes...</p></div>
+            <div class="wx-card" id="routeStats"><h3>Coverage</h3></div>
+            <div class="wx-card legend"><h3>Reading</h3>
+              <ul><li><i style="--c:#00b050"></i>Good</li><li><i style="--c:#ffc000"></i>Moderate</li><li><i style="--c:#ff7c00"></i>Poor</li><li><i style="--c:#ff0000"></i>Very Poor, or a hotspot candidate (red circle)</li></ul>
+              <small>Simulated buses are coloured by simulated AQI. The bus with your live ESP32 is coloured by its gas level against your alert setting, not by AQI, because the prototype has no PM sensor.</small>
+            </div>
+          </div>
+        </div>
+        <ol class="flow">
+          <li><b>1. Sense</b>The node on the bus reads three gas sensors, temperature, humidity and pressure.</li>
+          <li><b>2. Tag</b>Every reading gets a GPS position and a time, so it belongs to a place on the road.</li>
+          <li><b>3. Send</b>Readings travel over LoRa or Wi-Fi to a gateway and the Aeronex service.</li>
+          <li><b>4. Map &amp; forecast</b>Readings from all buses and fixed nodes feed the heatmap, hotspot detection and forecasts.</li>
+        </ol>
+      </div>
+    </section>
+    </div>
+    <div class="view app" data-view="hardware" hidden>
+    <!-- ===================== HARDWARE (always visible, never behind login) ===================== -->
+    <section class="sec dark" id="hardware">
+      <div class="wrap">
+        <header class="sec-head">
+          <span class="eyebrow">Hardware node</span>
+          <h2>Live from the ESP32, straight over USB.</h2>
+          <p>Readings stream from your board in the browser. They stay on screen after a reload or unplug, clearly marked as stored.</p>
+        </header>
+
+        <p class="hw-warn" id="hwUnsupported" hidden>This browser can't open serial ports. Open the site in Chrome or Edge on a desktop. If it still fails, run <code>python -m http.server</code> in this folder and open <code>http://localhost:8000</code>. Stored readings still show below.</p>
+
+        <div class="hw-bar">
+          <span class="hw-state off" id="hwState" role="status"><i></i><span id="hwStateTxt">Not connected</span></span>
+          <button class="btn btn-primary" id="hwConnect" type="button">Connect USB port</button>
+          <button class="btn btn-ghost" id="hwDisconnect" type="button" disabled>Disconnect</button>
+          <label>Baud rate <input type="number" id="hwBaud" value="115200" min="300" step="100"></label>
+          <span class="hw-help">In the list, choose the entry labelled COM9.</span>
+        </div>
+
+        <div class="hw-bar" role="group" aria-label="Device mode">
+          <strong>Mode</strong>
+          <span class="hw-modes">
+            <button type="button" data-hwmode="normal" disabled>Normal</button>
+            <button type="button" data-hwmode="warning" disabled>Warning</button>
+            <button type="button" data-hwmode="silent" disabled>Silent</button>
+          </span>
+          <label>Alert at ADC &ge; <input type="number" id="hwThresh" value="2500" min="0" max="4095" step="50"></label>
+          <span class="hw-help" id="hwModeHelp"></span>
+        </div>
+
+        <p class="hw-msg" id="hwMsg" role="status"></p>
+        <div class="hw-banner" id="hwBanner" role="alert"></div>
+
+        <div class="hw-grid" id="hwGrid"></div>
+        <div class="flags" id="hwFlags" aria-label="Data quality flags"></div>
+
+        <div class="hw-two">
+          <div class="hw-card"><h3>Gas sensors over time</h3><canvas id="hwChart" aria-label="Gas sensor chart"></canvas></div>
+          <div class="hw-card">
+            <h3>Gas-proxy outlook</h3><div id="hwFc"></div>
+            <h3 class="hw-sub">Source hint</h3><div id="hwSrc">Insufficient evidence.</div>
+          </div>
+        </div>
+
+        <div class="hw-two even">
+          <div class="hw-card"><h3>Sensor vs reference weather</h3><div id="hwCmp"></div></div>
+          <div class="hw-card">
+            <h3>Data &amp; serial monitor</h3>
+            <div class="hw-actions">
+              <button class="btn btn-ghost" id="hwDownload" type="button" disabled>Download CSV</button>
+              <button class="btn btn-ghost" id="hwClear" type="button" disabled>Clear stored data</button>
+              <span class="hw-help" id="hwCount">0 readings kept</span>
+            </div>
+            <details class="hw-log"><summary>Raw serial lines</summary><pre id="hwLog"></pre></details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    </div>
+    <div class="view app" data-view="live" hidden>
+    <!-- ===================== LIVE SNAPSHOT ===================== -->
+    <section class="sec" id="live">
+      <div class="wrap">
+        <header class="sec-head reveal">
+          <span class="eyebrow">Live snapshot</span>
+          <h2>Six corridors. One honest picture.</h2>
+          <p>Each card is a Hyderabad pollution corridor with its current indicative AQI. Updates every few seconds while sensors are streaming.</p>
+        </header>
+        <div class="zones" id="zones">
+          <!-- filled by app.js -->
+        </div>
+        <div class="stat-strip reveal">
+          <div><b data-count="6" id="stZones">6</b><span>zones monitored</span></div>
+          <div><b data-count="11" id="stNodes">11</b><span>sensor nodes</span></div>
+          <div><b id="stOnline">--</b><span>nodes online now</span></div>
+          <div><b id="stWorst">--</b><span>highest zone right now</span></div>
+        </div>
+        <p class="center reveal"><a class="btn btn-primary" href="#" data-login>Sign in</a></p>
+      </div>
+    </section>
+
+    </div>
+    <div class="view app" data-view="map" hidden>
+    <!-- ===================== MAP ===================== -->
+    <section class="sec" id="map">
+      <div class="wrap">
+        <header class="sec-head">
+          <span class="eyebrow">Live map</span>
+          <h2>Click anywhere, get the AQI.</h2>
+          <p>Click any spot on the map, or search a PIN code or district. You get the area name, PIN, district, AQI and weather for that place.</p>
+        </header>
+        <form class="place-search" id="placeForm" role="search">
+          <input id="placeQ" type="search" placeholder="PIN code or place, e.g. 500081 or Kukatpally" aria-label="Search by PIN code or place">
+          <button class="btn btn-primary" type="submit">Search</button>
+          <label class="chk"><input type="checkbox" id="mapHeat" checked> Heat overlay</label>
+        </form>
+        <div class="chips" id="distChips" aria-label="Districts">
+          <button type="button" data-q="Hyderabad district, Telangana">Hyderabad</button>
+          <button type="button" data-q="Rangareddy district, Telangana">Ranga Reddy</button>
+          <button type="button" data-q="Medchal-Malkajgiri district, Telangana">Medchal-Malkajgiri</button>
+          <button type="button" data-q="Sangareddy district, Telangana">Sangareddy</button>
+        </div>
+        <p class="place-msg" id="placeMsg" role="status"></p>
+        <div class="chips" id="placeHist" aria-label="Recent places"></div>
+        <div class="map-wrap">
+          <div class="map-box"><div id="mapEl" aria-label="Map of Hyderabad zones and the hardware node"></div></div>
+          <div class="map-side">
+            <div class="wx-card place" id="place" aria-live="polite"><h3>Selected place</h3><p class="muted">Click the map or search above.</p></div>
+            <aside class="wx-card" id="wx" aria-live="polite"><h3>Weather</h3><p>Loading...</p></aside>
+            <div class="wx-card legend"><h3>AQI bands (CPCB)</h3>
+              <ul><li><i style="--c:#00b050"></i>Good 0-50</li><li><i style="--c:#92d050"></i>Satisfactory 51-100</li><li><i style="--c:#ffc000"></i>Moderate 101-200</li><li><i style="--c:#ff7c00"></i>Poor 201-300</li><li><i style="--c:#ff0000"></i>Very Poor 301-400</li><li><i style="--c:#a00000"></i>Severe 401+</li></ul>
+              <small>Circles and the heat overlay use Open-Meteo PM2.5/PM10 model data. Gas sensors are never converted to AQI.</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    </div>
+    <div class="view app" data-view="heatmap" hidden>
+    <!-- ===================== HEATMAP ===================== -->
+    <section class="sec" id="heatmap">
+      <div class="wrap">
+        <header class="sec-head">
+          <span class="eyebrow">Heatmap</span>
+          <h2>City heatmap</h2>
+          <p>Estimated AQI between sampled points, smoothly interpolated across the Hyderabad area. Cells fade where the estimate is further from a real sample.</p>
+        </header>
+        <div class="hw-card hm-card">
+          <div class="hm-top">
+            <label class="chk"><input type="checkbox" id="hmFade" checked> Fade cells by uncertainty</label>
+            <span class="hm-stats" id="hmStats"></span>
+          </div>
+          <div class="hm-box"><canvas id="hmCanvas" aria-label="City AQI heatmap"></canvas><div class="hm-tip" id="hmTip" hidden></div></div>
+          <p class="hw-note" id="hmNote">Loading heatmap data...</p>
+        </div>
+      </div>
+    </section>
+
+    </div>
+    <div class="view app" data-view="forecast" hidden>
+    <!-- ===================== FORECAST ===================== -->
+    <section class="sec" id="forecast">
+      <div class="wrap">
+        <header class="sec-head">
+          <span class="eyebrow">Forecast</span>
+          <h2>What the air will do next.</h2>
+          <p>Hourly AQI for the past two days and the next two, for any zone or the place you picked on the map.</p>
+        </header>
+        <div class="hw-bar">
+          <label>Place <select id="fcPlace"></select></label>
+          <span class="hw-help" id="fcInfo"></span>
+        </div>
+        <div class="fc-cards" id="fcCards"></div>
+        <div class="hw-card"><h3>AQI by hour</h3><canvas id="fcChart" aria-label="Hourly AQI chart"></canvas></div>
+        <p class="hw-note">This is a model forecast (CAMS via Open-Meteo), not a prediction from your sensors. Your own gas-sensor outlook is in the Hardware view.</p>
+      </div>
+    </section>
+
+    </div>
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="foot">
+    <div class="wrap foot-in">
+      <div class="foot-brand">
+        <a class="brand" href="#home"><svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21" fill="none" stroke="#5eead4" stroke-width="3"/><path d="M8 27c6 0 6-7 12-7s6 7 12 7 5-4 8-4" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/></svg><span>Aeronex</span></a>
+        <p>Zonal air-quality intelligence for Hyderabad.</p>
+      </div>
+      <div><h4>Explore</h4><a href="#routes">Bus routes</a><a href="#hardware">Hardware</a><a href="#live">Live AQI</a><a href="#map">Map</a><a href="#heatmap">Heatmap</a><a href="#forecast">Forecast</a><a href="#features">Features</a><a href="#how">How it works</a></div>
+      <div><h4>Access</h4><a href="#" data-login>Sign in</a><a href="/docs">API docs</a></div>
+    </div>
+    <div class="wrap foot-bot">
+      <span>&copy; 2026 Aeronex. Prototype &mdash; hardware readings come from the connected ESP32; zone AQI without a backend is a model estimate, indicative and not an official reading.</span>
+      <a href="#home" class="totop">Back to top &uarr;</a>
+    </div>
+  </footer>
+
+  <!-- ===================== SIGN-IN MODAL (basic name + password) ===================== -->
+  <div class="modal" id="loginModal" hidden role="dialog" aria-modal="true" aria-labelledby="lmTitle">
+    <div class="modal-card">
+      <button class="modal-x" id="lmClose" type="button" aria-label="Close">&times;</button>
+      <div class="modal-brand"><svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21" fill="none" stroke="#5eead4" stroke-width="3"/><path d="M8 27c6 0 6-7 12-7s6 7 12 7 5-4 8-4" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/></svg><span>Aeronex</span></div>
+      <h3 id="lmTitle">Sign in</h3>
+      <form id="formIn" autocomplete="on">
+        <label>Name<input id="inUser" name="username" autocomplete="username" required></label>
+        <label>Password<input id="inPass" name="password" type="password" autocomplete="current-password" required></label>
+        <p class="err" id="inErr" role="alert"></p>
+        <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== HARDWARE DOCK: sensor readings are always on screen ===================== -->
+  <aside class="hw-dock" id="hwDock" aria-label="Hardware sensor readings">
+    <div class="wrap dock-in">
+      <span class="hw-state off" id="dockState"><i></i><span id="dockTxt">OFFLINE</span></span>
+      <span class="dock-vals" id="dockVals"></span>
+      <button class="btn btn-primary dock-btn" id="dockConnect" type="button">Connect USB</button>
+      <a class="dock-link" href="#hardware">Details</a>
+    </div>
+  </aside>
+
+  <script src="views.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="app.js"></script>
+  <script src="live.js"></script>
+  <script src="explore.js"></script>
+  <script src="routes.js"></script>
+</body>
+</html>
